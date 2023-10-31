@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cv2, rospy
+import rospy
 
 from threading import Condition
 from seekcamera import (
@@ -137,9 +137,6 @@ class ThermalCamera:
             return
 
     def main(self):
-        window_name = "Seek Thermal - Python OpenCV Sample"
-        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-
         # Create a context structure responsible for managing all connected USB cameras.
         # Cameras with other IO types can be managed by using a bitwise or of the
         # SeekCameraIOType enum cases.
@@ -161,26 +158,6 @@ class ThermalCamera:
                         img = renderer.frame.data
                         image_msg = self.cvBridge.cv2_to_imgmsg(img)
                         self.raw_image_publisher.publish(image_msg)
-
-                        # Resize the rendering window.
-                        if renderer.first_frame:
-                            (height, width, _) = img.shape
-                            cv2.resizeWindow(window_name, width * 2, height * 2)
-                            renderer.first_frame = False
-
-                        # Render the image to the window.
-                        cv2.imshow(window_name, img)
-
-                # Process key events.
-                key = cv2.waitKey(1)
-                if key == ord("q"):
-                    break
-
-                # Check if the window has been closed manually.
-                if not cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE):
-                    break
-
-        cv2.destroyWindow(window_name)
 
     def SeekFrame2msg(self, frameHeader: SeekCameraFrameHeader)->CameraFrame:
         # try:

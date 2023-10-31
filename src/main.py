@@ -140,7 +140,7 @@ def main():
             with renderer.frame_condition:
                 if renderer.frame_condition.wait(150.0 / 1000.0):
                     img = renderer.frame.data
-                    print(renderer.frame)
+
                     # Resize the rendering window.
                     if renderer.first_frame:
                         (height, width, _) = img.shape
