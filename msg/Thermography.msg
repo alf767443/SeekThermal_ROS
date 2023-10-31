@@ -1,0 +1,4 @@
+float32 environment_temperature
+PixelTuple min
+PixelTuple max
+PixelTuple spot

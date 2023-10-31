@@ -1,0 +1,2 @@
+uint32 frame_count
+uint32 diode_count

@@ -1,0 +1,3 @@
+string chip_id
+string serial_number
+string core_part_number
