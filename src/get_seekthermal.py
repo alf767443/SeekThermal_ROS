@@ -212,11 +212,15 @@ class ThermalCamera:
             return False
     
     def setCameraParametres(self, camera: SeekCamera)->bool:
-        camera.thermography_offset = self.CameraParameters['thermography_offset']
-        camera.temperature_unit    = self.CameraParameters['temperature_unit']
-        camera.color_palette       = self.CameraParameters['color_palette']
-        camera.agc_mode            = self.CameraParameters['agc_mode']
-        pass
+        try:
+            rospy.logdebug(f"Setting the paramaters on camera")
+            camera.thermography_offset = self.CameraParameters['thermography_offset']
+            camera.temperature_unit    = self.CameraParameters['temperature_unit']
+            camera.color_palette       = self.CameraParameters['color_palette']
+            camera.agc_mode            = self.CameraParameters['agc_mode']
+            rospy.loginfo(f"Camera parameters are set")
+        except Exception as e:
+            rospy.logerr(f"An error occurred when setting the camera parameters\n{e}")
 
 if __name__ == '__main__':
     try:
