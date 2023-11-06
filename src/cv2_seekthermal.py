@@ -15,9 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cv2, rospy
-
-from numpy import ndarray
+import cv2, rospy, numpy as np
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image
@@ -29,7 +27,8 @@ class ThermalCamera:
         rospy.init_node("thermal_camera_visualizer", anonymous=False)
         
         self.cvBridge = CvBridge()
-        self.img = None
+        self.frame = None
+        self.center_target = None
 
         rospy.Subscriber("/thermal_camera/image_raw", Image, callback=self.showImageFromMsg, queue_size=10)
         rospy.Subscriber("/thermal_camera/info", CameraFrame, callback=self.showInfoFromMsg, queue_size=10)
@@ -39,23 +38,26 @@ class ThermalCamera:
         first_frame = True
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
+        print(f"Press:\n\tq: quit\n\tc: capture")
+
         while not rospy.is_shutdown():
             # Wait a maximum of 150ms for each frame to be received.
             # A condition variable is used to synchronize the access to the renderer;
             # it will be notified by the user defined frame available callback thread.
             # Process key events.
-
-
-            while self.img is None:
-                print(type(self.img))
+            while self.frame is None:
+                print(type(self.frame))
                 rospy.sleep(0.1)
                 pass
             if first_frame:
-                (height, width, _) = self.img.shape
+                (height, width, _) = self.frame.shape
                 cv2.resizeWindow(window_name, width * 2, height * 2)
                 first_frame = False
-            # Render the image to the window.
-            cv2.imshow(window_name, self.img)
+            image = self.frame            
+            if not self.center_target is None:
+                image = cv2.addWeighted(image, 1, self.center_target, 1, 0)
+
+            cv2.imshow(window_name, image)
             key = cv2.waitKey(1)
             if key == ord("q"):
                 break
@@ -66,10 +68,28 @@ class ThermalCamera:
         cv2.destroyWindow(window_name)
 
     def showImageFromMsg(self, msg):
-        self.img = self.cvBridge.imgmsg_to_cv2(img_msg=msg)
+        self.frame = self.cvBridge.imgmsg_to_cv2(img_msg=msg)
 
     def showInfoFromMsg(self, msg):
-        pass
+        if not self.frame is None:
+            self.center_target = self.targetOverImage(msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature, 0.03, (0, 0, 255), self.frame)            
+
+    def targetOverImage(self, x, y, temperature, size, color,  frame):
+        (height, width, _) = frame.shape
+        mask = np.zeros_like(frame)
+        cv2.circle(mask, (x, y), int(height*size), color, int(height*0.01))
+        cv2.line(mask,(x-int(height*size), y),(x+int(height*size), y),color,int(height*0.01))
+        cv2.line(mask,(x, y-int(height*size)),(x, y+int(height*size)),color,int(height*0.01))
+        text = self.textOverImage(x+int(height*size), y-int(height*size), f"{temperature:.2f}", color, height*size*0.2, 1, frame)
+        mask = cv2.addWeighted(mask, 1, text, 1, 0)
+        return mask
+
+    def textOverImage(self, x, y, text, color, size, thick, frame):
+        mask = np.zeros_like(frame)
+        fonte = cv2.FONT_HERSHEY_PLAIN  
+        position = (x, y) 
+        cv2.putText(mask, text, position, fonte, size, color, thick)
+        return mask
 
 if __name__ == '__main__':
     try:
