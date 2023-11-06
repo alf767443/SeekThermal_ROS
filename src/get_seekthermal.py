@@ -56,11 +56,14 @@ class ThermalCamera:
         # Get the parameters
         self.getParameters()
         # Run the main function
+
         with SeekCameraManager(SeekCameraIOType.USB ) as manager:
             # Start listening for events.
             renderer = Renderer()
             manager.register_event_callback(self.on_event, renderer)
-        rospy.spin()
+            while not rospy.is_shutdown():
+                with renderer.frame_condition:
+                    pass
     
     def on_frame(self, _camera: SeekCamera, camera_frame: Condition, renderer: Renderer):
         """Async callback fired whenever a new frame is available.
@@ -82,11 +85,11 @@ class ThermalCamera:
         # all rendering done by OpenCV needs to happen on the main thread.
         with renderer.frame_condition:
             renderer.frame = camera_frame.color_argb8888
-
+            # Publish the frame in /info
             frame= renderer.frame.header
             frame_msg = self.SeekFrame2msg(frame)
             self.raw_info_publisher.publish(frame_msg)
-
+            # Publish the image in /image
             img = renderer.frame.data
             image_msg = self.cvBridge.cv2_to_imgmsg(img)
             self.raw_image_publisher.publish(image_msg)
@@ -147,7 +150,6 @@ class ThermalCamera:
         elif event_type == SeekCameraManagerEvent.READY_TO_PAIR:
             return
 
-    # 
     def SeekFrame2msg(self, frameHeader: SeekCameraFrameHeader)->CameraFrame:
         try:
             # Begin message
