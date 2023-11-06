@@ -17,17 +17,7 @@
 
 import cv2, rospy
 
-from threading import Condition
-from seekcamera import (
-    SeekCameraIOType,
-    SeekCameraColorPalette,
-    SeekCameraManager,
-    SeekCameraManagerEvent,
-    SeekCameraFrameFormat,
-    SeekCamera,
-    SeekCameraFrameHeader,
-    SeekFrame
-)
+from numpy import ndarray
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image
@@ -36,59 +26,50 @@ from cv_bridge import CvBridge, CvBridgeError
 
 class ThermalCamera:
     def __init__(self):
-        rospy.init_node("thermal_camera", anonymous=False)
+        rospy.init_node("thermal_camera_visualizer", anonymous=False)
         
         self.cvBridge = CvBridge()
-        self.window_name = "Seek Thermal - Python OpenCV Sample"
-        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
+        self.img = None
 
         rospy.Subscriber("/thermal_camera/image_raw", Image, callback=self.showImageFromMsg, queue_size=10)
         rospy.Subscriber("/thermal_camera/info", CameraFrame, callback=self.showInfoFromMsg, queue_size=10)
         
 
-        self.main()
+        window_name = "Seek Thermal - Python OpenCV Sample"
+        first_frame = True
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
-    def showImageFromMsg(self, msg):
-        self.cvBridge.imgmsg_to_cv2()
-        cv2.imshow(self.window_name, img)
-
-
-
-    def showInfoFromMsg(self, msg):
-        pass
-
-    def main(self):
-
-        # Create a context structure responsible for managing all connected USB cameras.
-        # Cameras with other IO types can be managed by using a bitwise or of the
-        # SeekCameraIOType enum cases.
         while not rospy.is_shutdown():
             # Wait a maximum of 150ms for each frame to be received.
             # A condition variable is used to synchronize the access to the renderer;
             # it will be notified by the user defined frame available callback thread.
-                if renderer.frame_condition.wait(150.0e-3):
-                    img = renderer.frame.data
-                    image_msg = self.cvBridge.cv2_to_imgmsg(img)
-                    self.raw_image_publisher.publish(image_msg)
-
-                    # Resize the rendering window.
-                    if renderer.first_frame:
-                        (height, width, _) = img.shape
-                        cv2.resizeWindow(window_name, width * 2, height * 2)
-                        renderer.first_frame = False
-
-                    # Render the image to the window.
-
             # Process key events.
+
+
+            while self.img is None:
+                print(type(self.img))
+                rospy.sleep(0.1)
+                pass
+            if first_frame:
+                (height, width, _) = self.img.shape
+                cv2.resizeWindow(window_name, width * 2, height * 2)
+                first_frame = False
+            # Render the image to the window.
+            cv2.imshow(window_name, self.img)
             key = cv2.waitKey(1)
             if key == ord("q"):
                 break
-
             # Check if the window has been closed manually.
             if not cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE):
                 break
-
+            rospy.sleep(0.05)
         cv2.destroyWindow(window_name)
+
+    def showImageFromMsg(self, msg):
+        self.img = self.cvBridge.imgmsg_to_cv2(img_msg=msg)
+
+    def showInfoFromMsg(self, msg):
+        pass
 
 if __name__ == '__main__':
     try:
