@@ -189,7 +189,6 @@ class ThermalCamera:
         try:
             # Get the camera parameters from ROS parameters
             CameraParameters = {
-                'thermography_window': tuple(rospy.get_param('thermal_camera/thermography_window', [10,10,10,10])),
                 'thermography_offset': rospy.get_param('thermal_camera/thermography_offset', 0),
                 'temperature_unit'   : SeekCameraTemperatureUnit(rospy.get_param('thermal_camera/temperature_unit', 0)),
                 'color_palette'      : SeekCameraColorPalette(rospy.get_param('thermal_camera/color_palette', 0)),
@@ -213,7 +212,6 @@ class ThermalCamera:
             return False
     
     def setCameraParametres(self, camera: SeekCamera)->bool:
-        # camera.thermography_window = self.CameraParameters['thermography_window']
         camera.thermography_offset = self.CameraParameters['thermography_offset']
         camera.temperature_unit    = self.CameraParameters['temperature_unit']
         camera.color_palette       = self.CameraParameters['color_palette']
