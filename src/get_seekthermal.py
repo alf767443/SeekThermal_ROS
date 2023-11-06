@@ -114,7 +114,7 @@ class ThermalCamera:
             # every time a new frame is received.
             
             # Set camera parameters
-            self.setCameraParametres(self.CameraParameters)
+            self.setCameraParametres(camera=camera)
 
             camera.register_frame_available_callback(self.on_frame, renderer)
             camera.capture_session_start(SeekCameraFrameFormat.COLOR_ARGB8888)
@@ -189,12 +189,12 @@ class ThermalCamera:
         try:
             # Get the camera parameters from ROS parameters
             CameraParameters = {
-                'thermography_window': tuple(rospy.get_param('thermal_camera/thermography_window', [0,0,100,100])),
+                'thermography_window': tuple(rospy.get_param('thermal_camera/thermography_window', [10,10,10,10])),
                 'thermography_offset': rospy.get_param('thermal_camera/thermography_offset', 0),
                 'temperature_unit'   : SeekCameraTemperatureUnit(rospy.get_param('thermal_camera/temperature_unit', 0)),
                 'color_palette'      : SeekCameraColorPalette(rospy.get_param('thermal_camera/color_palette', 0)),
-                'shutter_mode'       : SeekCameraShutterMode(rospy.get_param('thermal_camera/color_palette', 0)),
-                'agc_mode'           : SeekCameraAGCMode(rospy.get_param('thermal_camera/color_palette', 0))
+                'shutter_mode'       : SeekCameraShutterMode(rospy.get_param('thermal_camera/shutter_mode', 0)),
+                'agc_mode'           : SeekCameraAGCMode(rospy.get_param('thermal_camera/agc_mode', 0))
             }
             # Parameters are change/new
             if self.CameraParameters is None:
@@ -213,7 +213,7 @@ class ThermalCamera:
             return False
     
     def setCameraParametres(self, camera: SeekCamera)->bool:
-        camera.thermography_window = self.CameraParameters['thermography_window']
+        # camera.thermography_window = self.CameraParameters['thermography_window']
         camera.thermography_offset = self.CameraParameters['thermography_offset']
         camera.temperature_unit    = self.CameraParameters['temperature_unit']
         camera.color_palette       = self.CameraParameters['color_palette']

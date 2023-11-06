@@ -27,7 +27,7 @@
   # LINEAR = 0
   # HISTEQ = 1
 
-thermography_window: [0, 0, 100, 100]
+thermography_window: [10, 10, 10, 10]
 thermography_offset: 0
 temperature_unit: 0
 color_palette: 0
