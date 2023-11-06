@@ -181,7 +181,7 @@ class ThermalCamera:
         # except Exception as e:
         #     print(e)
 
-    def getParameters(self)->dict:
+    def getParameters(self)->bool:
         try:
             # Get the camera parameters from ROS parameters
             CameraParameters = {
@@ -192,13 +192,20 @@ class ThermalCamera:
                 'shutter_mode'       : SeekCameraShutterMode(rospy.get_param('thermal_camera/color_palette', 0)),
                 'agc_mode'           : SeekCameraAGCMode(rospy.get_param('thermal_camera/color_palette', 0))
             }
-            if self.CameraParameters is None or not self.CameraParameters == CameraParameters:
+            # Parameters are change/new
+            if self.CameraParameters is None:
+                rospy.loginfo(f"Initialising the camera parameters:\n{CameraParameters}")
                 self.CameraParameters = CameraParameters
                 return True
+            elif not self.CameraParameters == CameraParameters:
+                rospy.loginfo(f"Camera parameters are changed... New parameters:\n{CameraParameters}")
+                self.CameraParameters = CameraParameters
+                return True
+            # No changes
             else:
                 return False
         except Exception as e:
-            print(e)
+            rospy.logerr(f"An error occurred when obtaining the camera parameters\n{e}")
             return False
     
     def setCameraParametres(self, camera: SeekCamera)->bool:
