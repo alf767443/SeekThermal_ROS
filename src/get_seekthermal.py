@@ -50,8 +50,8 @@ class ThermalCamera:
         # Global variables
         self.CameraParameters = None
         # Init publishers and the CvBridge
-        self.raw_image_publisher = rospy.Publisher("/image_raw", Image, queue_size=10)
-        self.raw_info_publisher = rospy.Publisher("/info", CameraFrame, queue_size=10)
+        self.raw_image_publisher = rospy.Publisher("thermal_camera/image_raw", Image, queue_size=10)
+        self.raw_info_publisher = rospy.Publisher("thermal_camera/info", CameraFrame, queue_size=10)
         self.cvBridge = CvBridge()
         # Get the parameters
         self.getParameters()
@@ -109,11 +109,17 @@ class ThermalCamera:
             renderer.first_frame = True
             # Set a custom color palette.
             # Other options can set in a similar fashion.
-            camera.color_palette = SeekCameraColorPalette.TYRIAN
+            # camera.color_palette = SeekCameraColorPalette.TYRIAN
             # Start imaging and provide a custom callback to be called
             # every time a new frame is received.
+            
+            # Set camera parameters
+            self.setCameraParametres(self.CameraParameters)
+
             camera.register_frame_available_callback(self.on_frame, renderer)
             camera.capture_session_start(SeekCameraFrameFormat.COLOR_ARGB8888)
+
+
         elif event_type == SeekCameraManagerEvent.DISCONNECT:
             # Check that the camera disconnecting is one actually associated with
             # the renderer. This is required in case of multiple cameras.
@@ -183,7 +189,7 @@ class ThermalCamera:
         try:
             # Get the camera parameters from ROS parameters
             CameraParameters = {
-                'thermography_window': rospy.get_param('thermal_camera/thermography_window', (0,0,100,100)),
+                'thermography_window': tuple(rospy.get_param('thermal_camera/thermography_window', [0,0,100,100])),
                 'thermography_offset': rospy.get_param('thermal_camera/thermography_offset', 0),
                 'temperature_unit'   : SeekCameraTemperatureUnit(rospy.get_param('thermal_camera/temperature_unit', 0)),
                 'color_palette'      : SeekCameraColorPalette(rospy.get_param('thermal_camera/color_palette', 0)),
