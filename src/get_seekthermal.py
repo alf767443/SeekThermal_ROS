@@ -55,8 +55,7 @@ class ThermalCamera:
         self.cvBridge = CvBridge()
         # Get the parameters
         self.getParameters()
-        # Run the main function
-
+        # Open and monitor the camera
         with SeekCameraManager(SeekCameraIOType.USB ) as manager:
             # Start listening for events.
             renderer = Renderer()
@@ -112,7 +111,7 @@ class ThermalCamera:
             User defined data passed to the callback. This can be anything
             but in this case it is a reference to the Renderer object.
         """
-        print("{}: {}".format(str(event_type), camera.chipid))
+        rospy.loginfo("Camera event\n{}: {}".format(str(event_type), camera.chipid))
         if event_type == SeekCameraManagerEvent.CONNECT:
             if renderer.busy:
                 return
@@ -134,8 +133,6 @@ class ThermalCamera:
 
             camera.register_frame_available_callback(self.on_frame, renderer)
             camera.capture_session_start(SeekCameraFrameFormat.COLOR_ARGB8888)
-
-
         elif event_type == SeekCameraManagerEvent.DISCONNECT:
             # Check that the camera disconnecting is one actually associated with
             # the renderer. This is required in case of multiple cameras.
@@ -146,7 +143,7 @@ class ThermalCamera:
                 renderer.frame = None
                 renderer.busy = False
         elif event_type == SeekCameraManagerEvent.ERROR:
-            print("{}: {}".format(str(event_status), camera.chipid))
+            rospy.logerr("Camera error\n{}: {}".format(str(event_status), camera.chipid))
         elif event_type == SeekCameraManagerEvent.READY_TO_PAIR:
             return
 
