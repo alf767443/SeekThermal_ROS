@@ -111,8 +111,8 @@ class ThermalCamera:
             User defined data passed to the callback. This can be anything
             but in this case it is a reference to the Renderer object.
         """
-        rospy.loginfo("Camera event\n{}: {}".format(str(event_type), camera.chipid))
         if event_type == SeekCameraManagerEvent.CONNECT:
+            rospy.loginfo(f"Camera connect: {camera.chipid}")
             if renderer.busy:
                 return
             # Claim the renderer.
@@ -136,6 +136,7 @@ class ThermalCamera:
         elif event_type == SeekCameraManagerEvent.DISCONNECT:
             # Check that the camera disconnecting is one actually associated with
             # the renderer. This is required in case of multiple cameras.
+            rospy.loginfo(f"Camera disconnect: {camera.chipid}")
             if renderer.camera == camera:
                 # Stop imaging and reset all the renderer state.
                 camera.capture_session_stop()
