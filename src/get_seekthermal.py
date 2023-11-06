@@ -56,7 +56,11 @@ class ThermalCamera:
         # Get the parameters
         self.getParameters()
         # Run the main function
-        self.main()
+        with SeekCameraManager(SeekCameraIOType.USB ) as manager:
+            # Start listening for events.
+            renderer = Renderer()
+            manager.register_event_callback(self.on_event, renderer)
+        rospy.spin()
     
     def on_frame(self, _camera: SeekCamera, camera_frame: Condition, renderer: Renderer):
         """Async callback fired whenever a new frame is available.
@@ -78,6 +82,15 @@ class ThermalCamera:
         # all rendering done by OpenCV needs to happen on the main thread.
         with renderer.frame_condition:
             renderer.frame = camera_frame.color_argb8888
+
+            frame= renderer.frame.header
+            frame_msg = self.SeekFrame2msg(frame)
+            self.raw_info_publisher.publish(frame_msg)
+
+            img = renderer.frame.data
+            image_msg = self.cvBridge.cv2_to_imgmsg(img)
+            self.raw_image_publisher.publish(image_msg)
+
             renderer.frame_condition.notify()
 
     def on_event(self, camera: SeekCamera, event_type: SeekCameraManagerEvent, event_status, renderer: Renderer):
@@ -133,29 +146,6 @@ class ThermalCamera:
             print("{}: {}".format(str(event_status), camera.chipid))
         elif event_type == SeekCameraManagerEvent.READY_TO_PAIR:
             return
-
-    def main(self):
-        # Create a context structure responsible for managing all connected USB cameras.
-        # Cameras with other IO types can be managed by using a bitwise or of the
-        # SeekCameraIOType enum cases.
-        with SeekCameraManager(SeekCameraIOType.USB ) as manager:
-            # Start listening for events.
-            renderer = Renderer()
-            manager.register_event_callback(self.on_event, renderer)
-
-            while not rospy.is_shutdown():
-                # Wait a maximum of 150ms for each frame to be received.
-                # A condition variable is used to synchronize the access to the renderer;
-                # it will be notified by the user defined frame available callback thread.
-                with renderer.frame_condition:
-                    if not renderer.frame.header is None:
-                        frame= renderer.frame.header
-                        frame_msg = self.SeekFrame2msg(frame)
-                        self.raw_info_publisher.publish(frame_msg)
-                    if renderer.frame_condition.wait(150.0e-3):
-                        img = renderer.frame.data
-                        image_msg = self.cvBridge.cv2_to_imgmsg(img)
-                        self.raw_image_publisher.publish(image_msg)
 
     # 
     def SeekFrame2msg(self, frameHeader: SeekCameraFrameHeader)->CameraFrame:
