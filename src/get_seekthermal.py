@@ -16,7 +16,6 @@
 # limitations under the License.
 
 import rospy
-
 from threading import Condition
 from seekcamera import (
     SeekCameraIOType,
@@ -24,21 +23,20 @@ from seekcamera import (
     SeekCameraManager,
     SeekCameraManagerEvent,
     SeekCameraFrameFormat,
-    SeekCamera,
+    SeekCameraAGCMode,
+    SeekCameraShutterMode,
     SeekCameraFrameHeader,
+    SeekCameraTemperatureUnit,
+    SeekCamera,
     SeekFrame
 )
-
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image
 from seekcamera_ros.msg import CameraFrame
 from cv_bridge import CvBridge, CvBridgeError
 
-
-
 class Renderer:
     """Contains camera and image data required to render images to the screen."""
-
     def __init__(self):
         self.busy = False
         self.frame = SeekFrame()
@@ -46,18 +44,21 @@ class Renderer:
         self.frame_condition = Condition()
         self.first_frame = True
 
-
 class ThermalCamera:
     def __init__(self):
         rospy.init_node("thermal_camera", anonymous=False)
 
-        self.raw_image_publisher = rospy.Publisher("/thermal_camera/image_raw", Image, queue_size=10)
-        self.raw_info_publisher = rospy.Publisher("/thermal_camera/info", CameraFrame, queue_size=10)
+        self.CameraParameters = None
+
+        self.raw_image_publisher = rospy.Publisher("/image_raw", Image, queue_size=10)
+        self.raw_info_publisher = rospy.Publisher("/info", CameraFrame, queue_size=10)
         
+        self.getParameters()
+
         self.cvBridge = CvBridge()
         self.main()
     
-    def on_frame(self, _camera, camera_frame, renderer: Renderer):
+    def on_frame(self, _camera: SeekCamera, camera_frame: Condition, renderer: Renderer):
         """Async callback fired whenever a new frame is available.
 
         Parameters
@@ -79,7 +80,7 @@ class ThermalCamera:
             renderer.frame = camera_frame.color_argb8888
             renderer.frame_condition.notify()
 
-    def on_event(self, camera, event_type, event_status, renderer: Renderer):
+    def on_event(self, camera: SeekCamera, event_type: SeekCameraManagerEvent, event_status, renderer: Renderer):
         """Async callback fired whenever a camera event occurs.
 
         Parameters
@@ -96,30 +97,23 @@ class ThermalCamera:
             but in this case it is a reference to the Renderer object.
         """
         print("{}: {}".format(str(event_type), camera.chipid))
-
         if event_type == SeekCameraManagerEvent.CONNECT:
             if renderer.busy:
                 return
-
             # Claim the renderer.
             # This is required in case of multiple cameras.
             renderer.busy = True
             renderer.camera = camera
-
             # Indicate the first frame has not come in yet.
             # This is required to properly resize the rendering window.
             renderer.first_frame = True
-
             # Set a custom color palette.
             # Other options can set in a similar fashion.
             camera.color_palette = SeekCameraColorPalette.TYRIAN
-
             # Start imaging and provide a custom callback to be called
             # every time a new frame is received.
             camera.register_frame_available_callback(self.on_frame, renderer)
             camera.capture_session_start(SeekCameraFrameFormat.COLOR_ARGB8888)
-
-    
         elif event_type == SeekCameraManagerEvent.DISCONNECT:
             # Check that the camera disconnecting is one actually associated with
             # the renderer. This is required in case of multiple cameras.
@@ -129,10 +123,8 @@ class ThermalCamera:
                 renderer.camera = None
                 renderer.frame = None
                 renderer.busy = False
-
         elif event_type == SeekCameraManagerEvent.ERROR:
             print("{}: {}".format(str(event_status), camera.chipid))
-
         elif event_type == SeekCameraManagerEvent.READY_TO_PAIR:
             return
 
@@ -188,6 +180,35 @@ class ThermalCamera:
 
         # except Exception as e:
         #     print(e)
+
+    def getParameters(self)->dict:
+        try:
+            # Get the camera parameters from ROS parameters
+            CameraParameters = {
+                'thermography_window': rospy.get_param('thermal_camera/thermography_window', (0,0,100,100)),
+                'thermography_offset': rospy.get_param('thermal_camera/thermography_offset', 0),
+                'temperature_unit'   : SeekCameraTemperatureUnit(rospy.get_param('thermal_camera/temperature_unit', 0)),
+                'color_palette'      : SeekCameraColorPalette(rospy.get_param('thermal_camera/color_palette', 0)),
+                'shutter_mode'       : SeekCameraShutterMode(rospy.get_param('thermal_camera/color_palette', 0)),
+                'agc_mode'           : SeekCameraAGCMode(rospy.get_param('thermal_camera/color_palette', 0))
+            }
+            if self.CameraParameters is None or not self.CameraParameters == CameraParameters:
+                self.CameraParameters = CameraParameters
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(e)
+            return False
+    
+    def setCameraParametres(self, camera: SeekCamera)->bool:
+        camera.thermography_window = self.CameraParameters['thermography_window']
+        camera.thermography_offset = self.CameraParameters['thermography_offset']
+        camera.temperature_unit    = self.CameraParameters['temperature_unit']
+        camera.scene_emissivity    = self.CameraParameters['scene_emissivity']
+        camera.color_palette       = self.CameraParameters['color_palette']
+        camera.agc_mode            = self.CameraParameters['agc_mode']
+        pass
 
 if __name__ == '__main__':
     try:

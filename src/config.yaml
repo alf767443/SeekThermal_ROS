@@ -1,0 +1,35 @@
+# temperature_unit: 
+  # CELSIUS = 0
+  # FAHRENHEIT = 1
+  # KELVIN = 2
+
+# color_palette:
+  # WHITE_HOT = 0
+  # BLACK_HOT = 1
+  # SPECTRA = 2
+  # PRISM = 3
+  # TYRIAN = 4
+  # IRON = 5
+  # AMBER = 6
+  # HI = 7
+  # GREEN = 8
+  # USER_0 = 9
+  # USER_1 = 10
+  # USER_2 = 11
+  # USER_3 = 12
+  # USER_4 = 13
+
+# shutter_mode:
+  # AUTO = 0
+  # MANUAL = 1
+
+# agc_mode:
+  # LINEAR = 0
+  # HISTEQ = 1
+
+thermography_window: [0, 0, 100, 100]
+thermography_offset: 0
+temperature_unit: 0
+color_palette: 0
+shutter_mode: 0
+agc_mode: 0
