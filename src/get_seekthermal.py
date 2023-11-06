@@ -47,15 +47,15 @@ class Renderer:
 class ThermalCamera:
     def __init__(self):
         rospy.init_node("thermal_camera", anonymous=False)
-
+        # Global variables
         self.CameraParameters = None
-
+        # Init publishers and the CvBridge
         self.raw_image_publisher = rospy.Publisher("/image_raw", Image, queue_size=10)
         self.raw_info_publisher = rospy.Publisher("/info", CameraFrame, queue_size=10)
-        
-        self.getParameters()
-
         self.cvBridge = CvBridge()
+        # Get the parameters
+        self.getParameters()
+        # Run the main function
         self.main()
     
     def on_frame(self, _camera: SeekCamera, camera_frame: Condition, renderer: Renderer):
@@ -132,7 +132,7 @@ class ThermalCamera:
         # Create a context structure responsible for managing all connected USB cameras.
         # Cameras with other IO types can be managed by using a bitwise or of the
         # SeekCameraIOType enum cases.
-        with SeekCameraManager(SeekCameraIOType.USB) as manager:
+        with SeekCameraManager(SeekCameraIOType.USB ) as manager:
             # Start listening for events.
             renderer = Renderer()
             manager.register_event_callback(self.on_event, renderer)
@@ -151,12 +151,12 @@ class ThermalCamera:
                         image_msg = self.cvBridge.cv2_to_imgmsg(img)
                         self.raw_image_publisher.publish(image_msg)
 
+    # 
     def SeekFrame2msg(self, frameHeader: SeekCameraFrameHeader)->CameraFrame:
-        # try:
+        try:
             # Begin message
             header = Header()
             header.stamp = rospy.Time.now()
-
             msg = CameraFrame()
             msg.header                  = header            
             msg.sentinel                = frameHeader.sentinel
@@ -175,11 +175,9 @@ class ThermalCamera:
             (msg.thermography.min.x, msg.thermography.min.y, msg.thermography.min.temperature)    = frameHeader.thermography_min
             (msg.thermography.max.x, msg.thermography.max.y, msg.thermography.max.temperature)    = frameHeader.thermography_max
             (msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature) = frameHeader.thermography_spot
-            
             return msg
-
-        # except Exception as e:
-        #     print(e)
+        except Exception as e:
+            rospy.logerr(f"An error occurred when converting SeekFrame to rosmsg")
 
     def getParameters(self)->bool:
         try:
@@ -212,7 +210,6 @@ class ThermalCamera:
         camera.thermography_window = self.CameraParameters['thermography_window']
         camera.thermography_offset = self.CameraParameters['thermography_offset']
         camera.temperature_unit    = self.CameraParameters['temperature_unit']
-        camera.scene_emissivity    = self.CameraParameters['scene_emissivity']
         camera.color_palette       = self.CameraParameters['color_palette']
         camera.agc_mode            = self.CameraParameters['agc_mode']
         pass
