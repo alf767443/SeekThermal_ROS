@@ -134,7 +134,7 @@ class ThermalCamera:
             # every time a new frame is received.
             
             # Set camera parameters
-            self.setCameraParametres(camera=camera)
+            camera = self.setCameraParametres(camera=camera)
 
             camera.register_frame_available_callback(self.on_frame, renderer)
             camera.capture_session_start(SeekCameraFrameFormat.COLOR_ARGB8888)
@@ -234,16 +234,19 @@ class ThermalCamera:
             rospy.logerr(f"An error occurred when obtaining the camera parameters\n{e}")
             return False
 
-    def setCameraParametres(self, camera: SeekCamera)->bool:
+    def setCameraParametres(self, camera: SeekCamera)->SeekCamera:
         try:
             rospy.logdebug(f"Setting the paramaters on camera")
             camera.thermography_offset = self.CameraParameters['thermography_offset']
             camera.temperature_unit    = self.CameraParameters['temperature_unit']
-            camera.color_palette       = self.CameraParameters['color_palette']
+            camera.color_palette       = self.CameraParameters['color_palette']            
+            camera.shutter_mode        = self.CameraParameters['shutter_mode']
             camera.agc_mode            = self.CameraParameters['agc_mode']
             rospy.loginfo(f"Camera parameters are set")
+            return camera
         except Exception as e:
             rospy.logerr(f"An error occurred when setting the camera parameters\n{e}")
+            return False
 
     def _temp(self, name:str, var)->str:
         print(f"{name}\t{str(var)}\t{type(var)}")
