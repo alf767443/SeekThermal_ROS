@@ -61,6 +61,12 @@ add_message_files(
   Pixel.msg
   PixelTuple.msg
   Thermography.msg
+  
+  SeekCamera.msg
+  SeekCameraIOProperties.msg
+  SeekCameraSPIIOProperties.msg
+  SeekCameraUSBIOProperties.msg
+  ThermographyWindow.msg
 )
 
 ## Generate services in the 'srv' folder

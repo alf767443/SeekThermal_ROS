@@ -31,4 +31,4 @@ thermography_offset: 0
 temperature_unit: 0
 color_palette: 0
 shutter_mode: 0
-agc_mode: 0
+agc_mode: 1

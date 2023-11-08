@@ -32,7 +32,7 @@ from seekcamera import (
 )
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image
-from seekcamera_ros.msg import CameraFrame
+from seekcamera_ros.msg import CameraFrame as CameraFrameMsg, SeekCamera as SeekCameraMsg
 from cv_bridge import CvBridge, CvBridgeError
 
 class Renderer:
@@ -51,7 +51,8 @@ class ThermalCamera:
         self.CameraParameters = None
         # Init publishers and the CvBridge
         self.raw_image_publisher = rospy.Publisher("thermal_camera/image_raw", Image, queue_size=10)
-        self.raw_info_publisher = rospy.Publisher("thermal_camera/info", CameraFrame, queue_size=10)
+        self.info_frame_publisher = rospy.Publisher("thermal_camera/info/frame", CameraFrameMsg, queue_size=10)
+        self.info_camera_publisher = rospy.Publisher("thermal_camera/info/camera", SeekCameraMsg, queue_size=10)
         self.cvBridge = CvBridge()
         # Get the parameters
         self.getParameters()
@@ -87,11 +88,15 @@ class ThermalCamera:
             # Publish the frame in /info
             frame= renderer.frame.header
             frame_msg = self.SeekFrame2msg(frame)
-            self.raw_info_publisher.publish(frame_msg)
+            self.info_frame_publisher.publish(frame_msg)
             # Publish the image in /image
             img = renderer.frame.data
             image_msg = self.cvBridge.cv2_to_imgmsg(img)
             self.raw_image_publisher.publish(image_msg)
+            # Publish the camara info
+            camera = _camera
+            camera_msg = self.SeekCamera2msg(camera)
+            self.info_camera_publisher.publish(camera_msg)
 
             renderer.frame_condition.notify()
 
@@ -148,12 +153,12 @@ class ThermalCamera:
         elif event_type == SeekCameraManagerEvent.READY_TO_PAIR:
             return
 
-    def SeekFrame2msg(self, frameHeader: SeekCameraFrameHeader)->CameraFrame:
+    def SeekFrame2msg(self, frameHeader: SeekCameraFrameHeader)->CameraFrameMsg:
         try:
             # Begin message
             header = Header()
             header.stamp = rospy.Time.now()
-            msg = CameraFrame()
+            msg = CameraFrameMsg()
             msg.header                  = header            
             msg.sentinel                = frameHeader.sentinel
             msg.version                 = frameHeader.version
@@ -171,6 +176,34 @@ class ThermalCamera:
             (msg.thermography.min.x, msg.thermography.min.y, msg.thermography.min.temperature)    = frameHeader.thermography_min
             (msg.thermography.max.x, msg.thermography.max.y, msg.thermography.max.temperature)    = frameHeader.thermography_max
             (msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature) = frameHeader.thermography_spot
+            return msg
+        except Exception as e:
+            rospy.logerr(f"An error occurred when converting SeekFrame to rosmsg")
+
+    def SeekCamera2msg(self, camera: SeekCamera)->SeekCameraMsg:
+        try:
+            # Begin message
+            header = Header()
+            header.stamp = rospy.Time.now()
+            msg = SeekCameraMsg()
+            msg.header                          = header            
+            msg.chipid                          = camera.chipid
+            msg.io_type                         = camera.io_type.__str__()
+            msg.agc_mode                        = camera.agc_mode.__str__()
+            msg.shutter_mode                    = camera.shutter_mode.__str__()
+            msg.serial_number                   = camera.serial_number
+            msg.color_palette                   = camera.color_palette.__str__()
+            msg.temperature_unit                = msg.temperature_unit.__str__()
+            msg.firmware_version                = camera.firmware_version.__str__()
+            msg.scene_emissivity                = msg.scene_emissivity
+            msg.io_properties.type              = camera.io_properties.type.__str__()
+            msg.thermography_offset             = msg.thermography_offset
+            msg.io_properties.spi.cs_number     = camera.io_properties.spi.cs_number
+            msg.io_properties.usb.bus_number    = camera.io_properties.usb.bus_number
+            msg.io_properties.spi.bus_number    = camera.io_properties.spi.bus_number
+            msg.io_properties.usb.port_numbers  = camera.io_properties.usb.port_numbers
+            (msg.thermography_window.x, msg.thermography_window.y, msg.thermography_window.w, msg.thermography_window.h) = camera.thermography_window
+            
             return msg
         except Exception as e:
             rospy.logerr(f"An error occurred when converting SeekFrame to rosmsg")
@@ -200,7 +233,7 @@ class ThermalCamera:
         except Exception as e:
             rospy.logerr(f"An error occurred when obtaining the camera parameters\n{e}")
             return False
-    
+
     def setCameraParametres(self, camera: SeekCamera)->bool:
         try:
             rospy.logdebug(f"Setting the paramaters on camera")
@@ -211,6 +244,10 @@ class ThermalCamera:
             rospy.loginfo(f"Camera parameters are set")
         except Exception as e:
             rospy.logerr(f"An error occurred when setting the camera parameters\n{e}")
+
+    def _temp(self, name:str, var)->str:
+        print(f"{name}\t{str(var)}\t{type(var)}")
+
 
 if __name__ == '__main__':
     try:

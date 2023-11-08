@@ -1,0 +1,3 @@
+string type
+SeekCameraUSBIOProperties usb
+SeekCameraSPIIOProperties spi
