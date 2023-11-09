@@ -1,5 +1,5 @@
 <launch>
-  <arg name="param_file" default="$(find seekcamera_ros)/src/config.yaml" />  
+  <arg name="param_file" default="$(find seekcamera_ros)/cfg/config.yaml" />  
   <node name="thermal_camera" pkg="seekcamera_ros" type="get_seekthermal.py" output="screen">
     <rosparam file="$(arg param_file)" command="load"/>
   </node>
