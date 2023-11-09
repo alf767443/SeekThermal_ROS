@@ -125,14 +125,7 @@ class ThermalCamera:
             renderer.busy = True
             renderer.camera = camera
             # Indicate the first frame has not come in yet.
-            # This is required to properly resize the rendering window.
             renderer.first_frame = True
-            # Set a custom color palette.
-            # Other options can set in a similar fashion.
-            # camera.color_palette = SeekCameraColorPalette.TYRIAN
-            # Start imaging and provide a custom callback to be called
-            # every time a new frame is received.
-            
             # Set camera parameters
             camera = self.setCameraParametres(camera=camera)
 
@@ -193,11 +186,11 @@ class ThermalCamera:
             msg.shutter_mode                    = camera.shutter_mode.__str__()
             msg.serial_number                   = camera.serial_number
             msg.color_palette                   = camera.color_palette.__str__()
-            msg.temperature_unit                = msg.temperature_unit.__str__()
+            msg.temperature_unit                = camera.temperature_unit.__str__()
             msg.firmware_version                = camera.firmware_version.__str__()
-            msg.scene_emissivity                = msg.scene_emissivity
+            msg.scene_emissivity                = camera.scene_emissivity
             msg.io_properties.type              = camera.io_properties.type.__str__()
-            msg.thermography_offset             = msg.thermography_offset
+            msg.thermography_offset             = camera.thermography_offset
             msg.io_properties.spi.cs_number     = camera.io_properties.spi.cs_number
             msg.io_properties.usb.bus_number    = camera.io_properties.usb.bus_number
             msg.io_properties.spi.bus_number    = camera.io_properties.spi.bus_number
@@ -255,11 +248,7 @@ class ThermalCamera:
         except Exception as e:
             rospy.logerr(f"An error occurred when setting the camera parameters\n{e}")
             return False
-
-    def _temp(self, name:str, var)->str:
-        print(f"{name}\t{str(var)}\t{type(var)}")
-
-
+        
 if __name__ == '__main__':
     try:
         ThermalCamera()
