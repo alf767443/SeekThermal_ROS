@@ -19,7 +19,7 @@ import cv2, rospy, numpy as np
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image
-from seekcamera_ros.msg import CameraFrame
+from seekcamera_ros.msg import CameraFrame as CameraFrameMsg, SeekCamera as SeekCameraMsg
 from cv_bridge import CvBridge, CvBridgeError
 
 class ThermalCamera:
@@ -31,7 +31,9 @@ class ThermalCamera:
         self.center_target = None
 
         rospy.Subscriber("/thermal_camera/image_raw", Image, callback=self.showImageFromMsg, queue_size=10)
-        rospy.Subscriber("/thermal_camera/info", CameraFrame, callback=self.showInfoFromMsg, queue_size=10)
+        rospy.Subscriber("/thermal_camera/info/frame", CameraFrameMsg, callback=self.showInfoFrameFromMsg, queue_size=10)
+        rospy.Subscriber("/thermal_camera/info/camera", SeekCameraMsg, callback=self.showInfoCameraFromMsg, queue_size=10)
+
         
 
         window_name = "Seek Thermal - Python OpenCV Sample"
@@ -70,9 +72,12 @@ class ThermalCamera:
     def showImageFromMsg(self, msg):
         self.frame = self.cvBridge.imgmsg_to_cv2(img_msg=msg)
 
-    def showInfoFromMsg(self, msg):
+    def showInfoFrameFromMsg(self, msg):
         if not self.frame is None:
             self.center_target = self.targetOverImage(msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature, 0.03, (0, 0, 255), self.frame)            
+
+    def showInfoCameraFromMsg(self, msg):
+        pass
 
     def targetOverImage(self, x, y, temperature, size, color,  frame):
         (height, width, _) = frame.shape
@@ -90,6 +95,7 @@ class ThermalCamera:
         position = (x, y) 
         cv2.putText(mask, text, position, fonte, size, color, thick)
         return mask
+
 
 if __name__ == '__main__':
     try:
