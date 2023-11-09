@@ -85,6 +85,7 @@ class ThermalCamera:
         # all rendering done by OpenCV needs to happen on the main thread.
         with renderer.frame_condition:
             renderer.frame = camera_frame.color_argb8888
+            # renderer.frame = camera_frame.thermography_float
             # Publish the frame in /info
             frame= renderer.frame.header
             frame_msg = self.SeekFrame2msg(frame)
@@ -130,7 +131,8 @@ class ThermalCamera:
             camera = self.setCameraParametres(camera=camera)
 
             camera.register_frame_available_callback(self.on_frame, renderer)
-            camera.capture_session_start(SeekCameraFrameFormat.COLOR_ARGB8888)
+            # camera.capture_session_start(SeekCameraFrameFormat.COLOR_ARGB8888)
+            camera.capture_session_start(SeekCameraFrameFormat.THERMOGRAPHY_FLOAT | SeekCameraFrameFormat.COLOR_ARGB8888)
         elif event_type == SeekCameraManagerEvent.DISCONNECT:
             # Check that the camera disconnecting is one actually associated with
             # the renderer. This is required in case of multiple cameras.
