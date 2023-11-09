@@ -81,9 +81,9 @@ class ThermalCamera:
 
     def showInfoFrameFromMsg(self, msg:CameraFrameMsg):
         if not self.frame is None:
-            self.spot_target = self.targetOverImage(msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature, 0.03, (0, 0, 255), self.frame)
-            self.min_target = self.targetOverImage(msg.thermography.min.x, msg.thermography.min.y, msg.thermography.min.temperature, 0.03, (0, 255, 0), self.frame)
-            self.max_target = self.targetOverImage(msg.thermography.max.x, msg.thermography.max.y, msg.thermography.max.temperature, 0.03, (255, 0, 0), self.frame)
+            self.spot_target = self.targetOverImage(msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature, 0.03, (0, 255, 0), self.frame)
+            self.min_target = self.targetOverImage(msg.thermography.min.x, msg.thermography.min.y, msg.thermography.min.temperature, 0.03, (255, 0, 0), self.frame)
+            self.max_target = self.targetOverImage(msg.thermography.max.x, msg.thermography.max.y, msg.thermography.max.temperature, 0.03, (0, 0, 255), self.frame)
 
     def showInfoCameraFromMsg(self, msg:SeekCameraMsg):
         if not self.frame is None:
@@ -108,7 +108,7 @@ class ThermalCamera:
 
     def thermographWindow(self, tw: ThermographyWindow, color, thick, frame):
         mask = np.zeros_like(frame)
-        cv2.rectangle(mask, (tw.x, tw.y), (tw.x + tw.w, tw.y + tw.h), color, thick)
+        cv2.rectangle(mask, (tw.x, tw.y), (tw.x + tw.w - thick, tw.y + tw.h - thick), color, thick)
         return mask
 
     def putElement(self, element, image):
