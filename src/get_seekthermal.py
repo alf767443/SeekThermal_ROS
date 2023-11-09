@@ -209,13 +209,13 @@ class ThermalCamera:
             rospy.logerr(f"An error occurred when converting SeekFrame to rosmsg")
 
     def getParameters(self)->bool:
-        def parameters2str(p:str):
+        def parameters2str(p:dict)->str:
             _str =  f"\tthermography_offset:{p['thermography_offset']}\n"
             _str += f"\ttemperature_unit   :{p['temperature_unit'].__str__()}\n"
             _str += f"\tcolor_palette      :{p['color_palette'].__str__()}\n"
             _str += f"\tshutter_mode       :{p['shutter_mode'].__str__()}\n"
             _str += f"\tagc_mode           :{p['agc_mode'].__str__()}\n"
-            pass
+            return _str
         try:
             # Get the camera parameters from ROS parameters
             CameraParameters = {
