@@ -28,7 +28,9 @@ class ThermalCamera:
         
         self.cvBridge = CvBridge()
         self.frame = None
-        self.center_target = None
+        self.spot_target = None
+        self.min_target = None
+        self.max_target = None
         self.thermograph_window =  None
 
         rospy.Subscriber("/thermal_camera/image_raw", Image, callback=self.showImageFromMsg, queue_size=10)
@@ -55,10 +57,10 @@ class ThermalCamera:
                 cv2.resizeWindow(window_name, width * 2, height * 2)
                 first_frame = False
             image = self.frame            
-            image = self.putElement(element=self.center_target, image=image)
+            image = self.putElement(element=self.spot_target, image=image)
             image = self.putElement(element=self.thermograph_window, image=image)
-            # if not self.center_target is None:
-            #     image = cv2.addWeighted(image, 1, self.center_target, 1, 0)
+            # if not self.spot_target is None:
+            #     image = cv2.addWeighted(image, 1, self.spot_target, 1, 0)
             # if not self.thermograph_window is None:
             #     image = cv2.addWeighted(image, 1, self.thermograph_window, 1, 0)
 
@@ -77,7 +79,9 @@ class ThermalCamera:
 
     def showInfoFrameFromMsg(self, msg:CameraFrameMsg):
         if not self.frame is None:
-            self.center_target = self.targetOverImage(msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature, 0.03, (0, 0, 255), self.frame)            
+            self.spot_target = self.targetOverImage(msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature, 0.03, (0, 0, 255), self.frame)
+            self.min_target = self.targetOverImage(msg.thermography.min.x, msg.thermography.min.y, msg.thermography.min.temperature, 0.03, (0, 255, 0), self.frame)
+            self.max_target = self.targetOverImage(msg.thermography.max.x, msg.thermography.max.y, msg.thermography.max.temperature, 0.03, (255, 0, 0), self.frame)
 
     def showInfoCameraFromMsg(self, msg:SeekCameraMsg):
         if not self.frame is None:
