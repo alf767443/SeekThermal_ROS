@@ -19,7 +19,7 @@ import cv2, rospy, numpy as np
 
 from std_msgs.msg import Header
 from sensor_msgs.msg import Image
-from seekcamera_ros.msg import CameraFrame as CameraFrameMsg, SeekCamera as SeekCameraMsg
+from seekcamera_ros.msg import CameraFrame as CameraFrameMsg, SeekCamera as SeekCameraMsg, ThermographyWindow
 from cv_bridge import CvBridge, CvBridgeError
 
 class ThermalCamera:
@@ -29,12 +29,11 @@ class ThermalCamera:
         self.cvBridge = CvBridge()
         self.frame = None
         self.center_target = None
+        self.thermograph_window =  None
 
         rospy.Subscriber("/thermal_camera/image_raw", Image, callback=self.showImageFromMsg, queue_size=10)
         rospy.Subscriber("/thermal_camera/info/frame", CameraFrameMsg, callback=self.showInfoFrameFromMsg, queue_size=10)
         rospy.Subscriber("/thermal_camera/info/camera", SeekCameraMsg, callback=self.showInfoCameraFromMsg, queue_size=10)
-
-        
 
         window_name = "Seek Thermal - Python OpenCV Sample"
         first_frame = True
@@ -56,8 +55,12 @@ class ThermalCamera:
                 cv2.resizeWindow(window_name, width * 2, height * 2)
                 first_frame = False
             image = self.frame            
-            if not self.center_target is None:
-                image = cv2.addWeighted(image, 1, self.center_target, 1, 0)
+            image = self.putElement(element=self.center_target, image=image)
+            image = self.putElement(element=self.thermograph_window, image=image)
+            # if not self.center_target is None:
+            #     image = cv2.addWeighted(image, 1, self.center_target, 1, 0)
+            # if not self.thermograph_window is None:
+            #     image = cv2.addWeighted(image, 1, self.thermograph_window, 1, 0)
 
             cv2.imshow(window_name, image)
             key = cv2.waitKey(1)
@@ -72,14 +75,15 @@ class ThermalCamera:
     def showImageFromMsg(self, msg):
         self.frame = self.cvBridge.imgmsg_to_cv2(img_msg=msg)
 
-    def showInfoFrameFromMsg(self, msg):
+    def showInfoFrameFromMsg(self, msg:CameraFrameMsg):
         if not self.frame is None:
             self.center_target = self.targetOverImage(msg.thermography.spot.x, msg.thermography.spot.y, msg.thermography.spot.temperature, 0.03, (0, 0, 255), self.frame)            
 
-    def showInfoCameraFromMsg(self, msg):
-        pass
-
-    def targetOverImage(self, x, y, temperature, size, color,  frame):
+    def showInfoCameraFromMsg(self, msg:SeekCameraMsg):
+        if not self.frame is None:
+            self.thermograph_window = self.thermographWindow(msg.thermography_window, (0, 0, 255), 1,self.frame)
+        
+    def targetOverImage(self, x, y, temperature, size, color, frame):
         (height, width, _) = frame.shape
         mask = np.zeros_like(frame)
         cv2.circle(mask, (x, y), int(height*size), color, int(height*0.01))
@@ -96,6 +100,15 @@ class ThermalCamera:
         cv2.putText(mask, text, position, fonte, size, color, thick)
         return mask
 
+    def thermographWindow(self, tw: ThermographyWindow, color, thick, frame):
+        mask = np.zeros_like(frame)
+        cv2.rectangle(mask, (tw.x, tw.y), (tw.x + tw.w, tw.y + tw.h), color, thick)
+        return mask
+
+    def putElement(self, element, image):
+        if not element is None:
+            image = cv2.addWeighted(image, 1, element, 1, 0)
+        return image
 
 if __name__ == '__main__':
     try:
