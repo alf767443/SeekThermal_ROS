@@ -209,6 +209,13 @@ class ThermalCamera:
             rospy.logerr(f"An error occurred when converting SeekFrame to rosmsg")
 
     def getParameters(self)->bool:
+        def parameters2str(p:str):
+            _str =  f"\tthermography_offset:{p['thermography_offset']}\n"
+            _str += f"\ttemperature_unit   :{p['temperature_unit'].__str__()}\n"
+            _str += f"\tcolor_palette      :{p['color_palette'].__str__()}\n"
+            _str += f"\tshutter_mode       :{p['shutter_mode'].__str__()}\n"
+            _str += f"\tagc_mode           :{p['agc_mode'].__str__()}\n"
+            pass
         try:
             # Get the camera parameters from ROS parameters
             CameraParameters = {
@@ -220,11 +227,12 @@ class ThermalCamera:
             }
             # Parameters are change/new
             if self.CameraParameters is None:
-                rospy.loginfo(f"Initialising the camera parameters:\n{CameraParameters}")
+                rospy.loginfo(f"Initialising the camera parameters:\n{parameters2str(CameraParameters)}")
                 self.CameraParameters = CameraParameters
+                
                 return True
             elif not self.CameraParameters == CameraParameters:
-                rospy.loginfo(f"Camera parameters are changed... New parameters:\n{CameraParameters}")
+                rospy.loginfo(f"Camera parameters are changed... New parameters:\n{parameters2str(CameraParameters)}")
                 self.CameraParameters = CameraParameters
                 return True
             # No changes
