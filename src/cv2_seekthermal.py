@@ -57,6 +57,8 @@ class ThermalCamera:
                 cv2.resizeWindow(window_name, width * 2, height * 2)
                 first_frame = False
             image = self.frame            
+            image = self.putElement(element=self.min_target, image=image)
+            image = self.putElement(element=self.max_target, image=image)
             image = self.putElement(element=self.spot_target, image=image)
             image = self.putElement(element=self.thermograph_window, image=image)
             # if not self.spot_target is None:
